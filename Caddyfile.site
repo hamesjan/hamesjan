@@ -1,0 +1,5 @@
+hamesjan.com, www.hamesjan.com {
+    root * /root/hamesjan/build
+    try_files {path} {path}.html /index.html
+    file_server
+}
