@@ -30,8 +30,13 @@
 <svelte:window on:click={handleWindowClick} />
 
 <header>
-  <a href="/" class="site-title">hamesjan.com</a>
+  <div class="header-left">
+    <a href="/" class="site-title">hamesjan.com</a>
+    <span class="header-bio">hi! I'm a developer from California.</span>
+  </div>
   <nav>
+    <a href="/blog" class="nav-link">blog</a>
+    <a href="/tags" class="nav-link">tags</a>
     <a href="/portfolio" class="nav-link">portfolio</a>
     <div class="settings-menu">
       <button class="settings-btn" on:click|stopPropagation={() => (settingsOpen = !settingsOpen)}>
@@ -61,6 +66,18 @@
     align-items: center;
     padding: 14px 24px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-bio {
+    font-family: 'JetBrains Mono', 'Fira Mono', ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
   }
 
   .site-title {
