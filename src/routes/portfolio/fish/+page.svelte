@@ -3,7 +3,7 @@
 </svelte:head>
 
 <div class="container">
-  <a href="/" class="back">← Back</a>
+  <a href="/portfolio" class="back">← Back</a>
 
   <h1>Welcome to the Fish Page</h1>
 
