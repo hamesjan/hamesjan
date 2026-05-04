@@ -5,24 +5,33 @@
   let darkMode = true;
   let settingsOpen = false;
 
+  let clickCount = 0;
+  let clickTimer = null;
+  let counterRevealed = false;
+
   onMount(() => {
     const saved = localStorage.getItem('darkMode');
     darkMode = saved !== null ? saved === 'true' : true;
   });
 
-  function applyTheme() {
+  function toggleDark() {
+    darkMode = !darkMode;
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('darkMode', String(darkMode));
   }
 
-  function toggleDark() {
-    darkMode = !darkMode;
-    applyTheme();
+  function handleWindowClick(e) {
+    if (!e.target.closest('.settings-menu')) settingsOpen = false;
   }
 
-  function handleWindowClick(e) {
-    if (!e.target.closest('.settings-menu')) {
-      settingsOpen = false;
+  function handleBlockClick() {
+    clickCount++;
+    clearTimeout(clickTimer);
+    if (clickCount >= 3) {
+      clickCount = 0;
+      counterRevealed = true;
+    } else {
+      clickTimer = setTimeout(() => { clickCount = 0; }, 600);
     }
   }
 </script>
@@ -35,6 +44,7 @@
     <span class="header-bio">hi! I'm a developer from California.</span>
   </div>
   <nav>
+    <a href="/movies" class="nav-link">movies</a>
     <a href="/blog" class="nav-link">blog</a>
     <a href="/tags" class="nav-link">tags</a>
     <a href="/portfolio" class="nav-link">portfolio</a>
@@ -58,6 +68,21 @@
 </header>
 
 <slot />
+
+<!-- page counter (bottom-left) -->
+<div class="counter-wrap">
+  <a href="http://stuff.mit.edu/doc/counter-howto.html"><img
+    src="http://stuff.mit.edu/cgi/counter/hamesjan"
+    alt="several"
+    class="counter-img"
+  /></a>
+  <div
+    class="counter-cover"
+    class:revealed={counterRevealed}
+    on:click={handleBlockClick}
+    role="presentation"
+  ></div>
+</div>
 
 <style>
   header {
@@ -88,10 +113,7 @@
     text-decoration: none;
   }
 
-  .site-title:hover {
-    color: var(--text);
-    opacity: 0.7;
-  }
+  .site-title:hover { opacity: 0.7; }
 
   nav {
     display: flex;
@@ -106,13 +128,9 @@
     text-decoration: none;
   }
 
-  .nav-link:hover {
-    color: var(--text);
-  }
+  .nav-link:hover { color: var(--text); }
 
-  .settings-menu {
-    position: relative;
-  }
+  .settings-menu { position: relative; }
 
   .settings-btn {
     font-family: 'JetBrains Mono', 'Fira Mono', ui-monospace, monospace;
@@ -124,9 +142,7 @@
     padding: 0;
   }
 
-  .settings-btn:hover {
-    color: var(--text);
-  }
+  .settings-btn:hover { color: var(--text); }
 
   .dropdown {
     position: absolute;
@@ -139,6 +155,9 @@
     min-width: 160px;
     z-index: 100;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .toggle-row {
@@ -189,12 +208,34 @@
     transition: transform 0.2s, background 0.2s;
   }
 
-  input:checked + .track {
-    background: #4a86c8;
+  input:checked + .track { background: #4a86c8; }
+  input:checked + .track::after { transform: translateX(13px); background: #ffffff; }
+
+  /* counter */
+  .counter-wrap {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 50;
+    line-height: 0;
   }
 
-  input:checked + .track::after {
-    transform: translateX(13px);
-    background: #ffffff;
+  .counter-img {
+    display: block;
+    max-height: 20px;
+  }
+
+  .counter-cover {
+    position: absolute;
+    inset: -4px;
+    background: color-mix(in srgb, var(--bg) 95%, white);
+    cursor: default;
+    user-select: none;
+    transition: opacity 0.2s;
+  }
+
+  .counter-cover.revealed {
+    opacity: 0;
+    pointer-events: none;
   }
 </style>

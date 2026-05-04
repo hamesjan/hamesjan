@@ -1,0 +1,16 @@
+[Unit]
+Description=hamesjan.com SvelteKit server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/hamesjan
+ExecStart=/usr/local/bin/node /root/hamesjan/build/index.js
+Restart=on-failure
+RestartSec=5
+
+EnvironmentFile=/root/hamesjan/.env
+
+[Install]
+WantedBy=multi-user.target

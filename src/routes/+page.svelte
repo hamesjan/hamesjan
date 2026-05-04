@@ -2,6 +2,25 @@
   <title>James Han</title>
 </svelte:head>
 
+<script>
+  export let data;
+
+  let expanded = false;
+  const greenTags = new Set(['engineering', 'live music', 'create', 'nature', 'movies']);
+
+  const sorted = [
+    'fun', 'ocean', 'engineering', 'software', 'hardware', 'finance',
+    'create', 'journal', 'linux', 'firmware', 'pcbs', 'skateboarding',
+    'surfing', 'snowboarding', 'fishing', 'nature', 'looking at fish', 'reading',
+    'cooking', 'piano', 'guitar', 'live music', 'biology', 'drawing',
+    'coffee', 'bagels', 'kbbq', 'urban exploration', 'history', 'movies'
+  ].sort();
+
+  const recent = [...data.posts]
+    .sort((a, b) => b.isoDate.localeCompare(a.isoDate))
+    .slice(0, 8);
+</script>
+
 <main>
   <div class="terminal" class:expanded on:click={() => expanded = !expanded} role="button" tabindex="0" on:keydown={e => e.key === 'Enter' && (expanded = !expanded)}>
     <div class="term-line">
@@ -33,25 +52,6 @@
     {/each}
   </section>
 </main>
-
-<script>
-  import { posts } from '$lib/posts.js';
-
-  let expanded = false;
-  const greenTags = new Set(['engineering', 'live music', 'create', 'nature']);
-
-  const sorted = [
-    'fun', 'ocean', 'engineering', 'software', 'hardware', 'finance',
-    'create', 'journal', 'linux', 'firmware', 'pcbs', 'skateboarding',
-    'surfing', 'snowboarding', 'fishing', 'nature', 'looking at fish', 'reading',
-    'cooking', 'piano', 'guitar', 'live music', 'biology', 'drawing',
-    'coffee', 'bagels', 'kbbq', 'urban exploration', 'history'
-  ].sort();
-
-  const recent = [...posts]
-    .sort((a, b) => b.isoDate.localeCompare(a.isoDate))
-    .slice(0, 8);
-</script>
 
 <style>
   main {

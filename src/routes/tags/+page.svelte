@@ -1,6 +1,6 @@
 <script>
-  import { getAllTags, getPostsByTag } from '$lib/posts.js';
-  const tags = getAllTags().map(tag => ({ tag, count: getPostsByTag(tag).length }));
+  export let data;
+  const tags = data.tags;
 </script>
 
 <svelte:head>

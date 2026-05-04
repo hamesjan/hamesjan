@@ -1,6 +1,6 @@
 <script>
-  import { posts } from '$lib/posts.js';
-  const sorted = [...posts].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+  export let data;
+  const sorted = [...data.posts].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
 </script>
 
 <svelte:head>
