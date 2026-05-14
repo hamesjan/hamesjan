@@ -4,8 +4,9 @@ export function load() {
   const movies = getMovies();
   return {
     movies: [...movies].sort((a, b) => {
-      if (b.rating !== a.rating) return b.rating - a.rating;
-      return b.dateWatched.localeCompare(a.dateWatched);
+      if (!a.dateWatched) return 1;
+      if (!b.dateWatched) return -1;
+      return a.dateWatched > b.dateWatched ? -1 : a.dateWatched < b.dateWatched ? 1 : 0;
     })
   };
 }

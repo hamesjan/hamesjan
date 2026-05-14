@@ -18,6 +18,10 @@ export function getPosts() {
   return readJson(postsPath);
 }
 
+export function getPublishedPosts() {
+  return getPosts().filter(p => p.published !== false);
+}
+
 export function getPost(year, month, day) {
   return getPosts().find(p => p.slug === `${year}/${month}/${day}`) ?? null;
 }

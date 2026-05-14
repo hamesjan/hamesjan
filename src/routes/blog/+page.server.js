@@ -1,5 +1,5 @@
-import { getPosts } from '$lib/server/db.js';
+import { getPublishedPosts } from '$lib/server/db.js';
 
 export function load() {
-  return { posts: getPosts() };
+  return { posts: getPublishedPosts() };
 }

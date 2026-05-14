@@ -1,8 +1,8 @@
-import { getPosts, getAllTags } from '$lib/server/db.js';
+import { getPublishedPosts } from '$lib/server/db.js';
 
 export function load() {
-  const posts = getPosts();
-  const allTags = getAllTags();
+  const posts = getPublishedPosts();
+  const allTags = [...new Set(posts.flatMap(p => p.tags))].sort();
   return {
     tags: allTags.map(tag => ({
       tag,

@@ -2,8 +2,21 @@
   export let data;
   const { movies } = data;
 
-  function stars(n) {
-    return '★'.repeat(n) + '☆'.repeat(5 - n);
+  function starList(rating) {
+    const result = [];
+    for (let i = 1; i <= 5; i++) {
+      if (rating >= i) result.push('full');
+      else if (rating >= i - 0.5) result.push('half');
+      else result.push('empty');
+    }
+    return result;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(Number);
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    return `${months[m-1]} ${d}, ${y}`;
   }
 </script>
 
@@ -27,7 +40,12 @@
               <div class="movie-header">
                 <span class="movie-title">{movie.title}</span>
                 <span class="movie-year">{movie.year}</span>
-                <span class="movie-stars">{stars(movie.rating)}</span>
+                <span class="movie-stars">
+                  {#each starList(movie.rating) as type}
+                    <span class="star star-{type}">★</span>
+                  {/each}
+                  <span class="rating-num">{movie.rating}</span>
+                </span>
               </div>
               {#if movie.director}
                 <div class="movie-director">dir. {movie.director}</div>
@@ -39,7 +57,7 @@
                 <div class="movie-review">{movie.review}</div>
               {/if}
               {#if movie.dateWatched}
-                <div class="movie-date">watched {movie.dateWatched}</div>
+                <div class="movie-date">watched {formatDate(movie.dateWatched)}</div>
               {/if}
             </div>
           </div>
@@ -128,10 +146,37 @@
   }
 
   .movie-stars {
-    font-size: 13px;
-    color: #e5b84a;
     letter-spacing: 1px;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .star {
+    display: inline-block;
+    position: relative;
+    font-size: 18px;
+    color: var(--border);
+  }
+
+  .star-full { color: #e5b84a; }
+
+  .star-half::after {
+    content: '★';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    overflow: hidden;
+    color: #e5b84a;
+    pointer-events: none;
+  }
+
+  .rating-num {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 6px;
   }
 
   .movie-director {

@@ -1,8 +1,6 @@
-import { getPostsByTag } from '$lib/server/db.js';
-import { error } from '@sveltejs/kit';
+import { getPublishedPosts } from '$lib/server/db.js';
 
 export function load({ params }) {
-  const posts = getPostsByTag(params.tag);
-  if (posts === null) throw error(404, 'Tag not found');
+  const posts = getPublishedPosts().filter(p => p.tags.includes(params.tag));
   return { tag: params.tag, posts };
 }

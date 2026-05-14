@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   let status = 'loading'; // 'loading' | 'login' | 'authed'
   let activeTab = 'blog';
@@ -18,8 +18,15 @@
   let posterPreview = '';
   let uploadingPoster = false;
 
+  let postImageFile = null;
+  let postImagePreview = '';
+  let pasteUploading = false;
+  let previewMode = false;
+
   let saving = false;
   let error = '';
+  let hoverRating = 0;
+  $: effectiveRating = hoverRating || movieForm.rating;
 
   // login form
   let passwordInput = '';
@@ -27,7 +34,7 @@
   let submitting = false;
 
   function emptyPost() {
-    return { title: '', date: '', isoDate: '', tags: '', content: '' };
+    return { title: '', date: '', isoDate: '', tags: '', content: '', image: '', published: true };
   }
 
   function emptyMovie() {
@@ -73,29 +80,74 @@
     ]);
     posts = [...pr].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
     movies = [...mr].sort((a, b) => {
-      if (b.rating !== a.rating) return b.rating - a.rating;
-      return b.dateWatched.localeCompare(a.dateWatched);
+      if (!a.dateWatched) return 1;
+      if (!b.dateWatched) return -1;
+      return a.dateWatched > b.dateWatched ? -1 : a.dateWatched < b.dateWatched ? 1 : 0;
     });
   }
 
   // ── blog ──
 
-  function startNewPost() { postForm = emptyPost(); editingPost = null; newPost = true; error = ''; }
+  function startNewPost() { postForm = emptyPost(); postImageFile = null; postImagePreview = ''; previewMode = false; editingPost = null; newPost = true; error = ''; }
 
   function startEditPost(post) {
-    postForm = { title: post.title, date: post.date, isoDate: post.isoDate, tags: post.tags.join(', '), content: post.content };
+    postForm = { title: post.title, date: post.date, isoDate: post.isoDate, tags: post.tags.join(', '), content: post.content, image: post.image || '', published: post.published !== false };
+    postImageFile = null;
+    postImagePreview = post.image || '';
+    previewMode = false;
     editingPost = post.slug;
     newPost = false;
     error = '';
   }
 
-  function cancelPost() { newPost = false; editingPost = null; error = ''; }
+  function cancelPost() { newPost = false; editingPost = null; postImageFile = null; postImagePreview = ''; previewMode = false; error = ''; }
+
+  function onPostImageChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    postImageFile = file;
+    postImagePreview = URL.createObjectURL(file);
+  }
+
+  async function onContentPaste(e) {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if (!imageItem) return;
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if (!file) return;
+    pasteUploading = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const textarea = e.target;
+      const start = textarea.selectionStart;
+      const insert = `![image](${data.path})`;
+      postForm.content = postForm.content.slice(0, start) + insert + postForm.content.slice(textarea.selectionEnd);
+      await tick();
+      textarea.selectionStart = textarea.selectionEnd = start + insert.length;
+    } catch { error = 'image upload failed'; }
+    finally { pasteUploading = false; }
+  }
 
   async function savePost() {
     saving = true; error = '';
     try {
+      let imagePath = postForm.image;
+      if (postImageFile) {
+        const fd = new FormData();
+        fd.append('file', postImageFile);
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        imagePath = data.path;
+      }
       const payload = {
         ...postForm,
+        image: imagePath,
         tags: postForm.tags.split(',').map(t => t.trim()).filter(Boolean),
         slug: postForm.isoDate.replaceAll('-', '/').split('/').slice(0, 3).join('/')
       };
@@ -108,6 +160,32 @@
       await loadAll();
     } catch { error = 'save failed'; }
     finally { saving = false; }
+  }
+
+  // ── preview rendering ──
+
+  function parseForPreview(content) {
+    const segments = [];
+    const parts = content.split('```');
+    parts.forEach((part, i) => {
+      if (i % 2 === 0) {
+        part.split('\n\n').filter(p => p.trim()).forEach(p => {
+          segments.push({ type: 'paragraph', text: p.trim() });
+        });
+      } else {
+        const nl = part.indexOf('\n');
+        const code = nl > 0 ? part.slice(nl + 1) : part;
+        segments.push({ type: 'code', text: code.replace(/\n$/, '') });
+      }
+    });
+    return segments;
+  }
+
+  function renderPreviewParagraph(text) {
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return escaped
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;display:block;margin:8px 0">')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
   }
 
   async function deletePost(slug) {
@@ -170,7 +248,7 @@
     await loadAll();
   }
 
-  function starLabel(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
+  function starLabel(rating) { return `${rating} ★`; }
 </script>
 
 <svelte:head>
@@ -225,7 +303,10 @@
           <tbody>
             {#each posts as post}
               <tr>
-                <td class="col-title">{post.title}</td>
+                <td class="col-title">
+                  {post.title}
+                  {#if post.published === false}<span class="draft-badge">draft</span>{/if}
+                </td>
                 <td class="col-date">{post.date}</td>
                 <td class="col-tags">{post.tags.join(', ')}</td>
                 <td class="col-actions">
@@ -246,11 +327,51 @@
             <label class="field"><span>date (display)</span><input bind:value={postForm.date} placeholder="may 4, 2026" /></label>
             <label class="field"><span>iso date</span><input bind:value={postForm.isoDate} placeholder="2026-05-04" /></label>
             <label class="field"><span>tags (comma-separated)</span><input bind:value={postForm.tags} placeholder="general, thoughts" /></label>
-            <label class="field full"><span>content</span><textarea bind:value={postForm.content} rows="18" placeholder="write your post here..."></textarea></label>
+            <div class="field full">
+              <span>cover image (optional)</span>
+              <div class="poster-row">
+                {#if postImagePreview}
+                  <img src={postImagePreview} alt="cover preview" class="poster-preview cover-preview" />
+                {/if}
+                <label class="file-label">
+                  {postImageFile ? postImageFile.name : 'choose image'}
+                  <input type="file" accept="image/*" on:change={onPostImageChange} class="file-input" />
+                </label>
+                {#if postForm.image && !postImageFile}
+                  <button type="button" class="action-btn danger" on:click={() => { postForm.image = ''; postImagePreview = ''; }}>remove</button>
+                {/if}
+              </div>
+            </div>
+            <div class="field full">
+              <div class="field-header">
+                <span>content {#if pasteUploading}<span class="upload-hint">uploading…</span>{/if}</span>
+                <div class="view-toggle">
+                  <button type="button" class="toggle-btn" class:active={!previewMode} on:click={() => previewMode = false}>write</button>
+                  <button type="button" class="toggle-btn" class:active={previewMode} on:click={() => previewMode = true}>preview</button>
+                </div>
+              </div>
+              {#if previewMode}
+                <div class="preview-pane">
+                  {#each parseForPreview(postForm.content) as seg}
+                    {#if seg.type === 'code'}
+                      <pre class="preview-code"><code>{seg.text}</code></pre>
+                    {:else}
+                      <p class="preview-p">{@html renderPreviewParagraph(seg.text)}</p>
+                    {/if}
+                  {/each}
+                </div>
+              {:else}
+                <textarea bind:value={postForm.content} rows="18" placeholder="write your post here... (paste an image to upload it)" on:paste={onContentPaste}></textarea>
+              {/if}
+            </div>
           </div>
           <div class="form-actions">
             <button class="btn-save" on:click={savePost} disabled={saving}>{saving ? 'saving...' : 'save'}</button>
             <button class="btn-cancel" on:click={cancelPost}>cancel</button>
+            <label class="published-toggle">
+              <input type="checkbox" bind:checked={postForm.published} />
+              <span class="pub-label" class:is-draft={!postForm.published}>{postForm.published ? 'published' : 'draft'}</span>
+            </label>
           </div>
         </div>
       {/if}
@@ -291,9 +412,16 @@
             <label class="field full"><span>review title</span><input bind:value={movieForm.reviewTitle} placeholder="an optional title for your review" /></label>
             <div class="field full">
               <span>rating</span>
-              <div class="star-row">
+              <div class="star-row" on:mouseleave={() => hoverRating = 0}>
                 {#each [1,2,3,4,5] as n}
-                  <button type="button" class="star-btn" class:filled={n <= movieForm.rating} on:click={() => movieForm.rating = n}>★</button>
+                  <button
+                    type="button"
+                    class="star-btn"
+                    class:filled={effectiveRating >= n}
+                    class:half={effectiveRating >= n - 0.5 && effectiveRating < n}
+                    on:mousemove={(e) => { const r = e.currentTarget.getBoundingClientRect(); hoverRating = (e.clientX - r.left) < r.width / 2 ? n - 0.5 : n; }}
+                    on:click={(e) => { const r = e.currentTarget.getBoundingClientRect(); movieForm.rating = (e.clientX - r.left) < r.width / 2 ? n - 0.5 : n; }}
+                  >★</button>
                 {/each}
               </div>
             </div>
@@ -501,11 +629,21 @@
     color: var(--border);
     padding: 0;
     line-height: 1;
-    transition: color 0.1s;
+    position: relative;
   }
 
   .star-btn.filled { color: #e5b84a; }
-  .star-btn:hover { color: #e5b84a; }
+
+  .star-btn.half::after {
+    content: '★';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    overflow: hidden;
+    color: #e5b84a;
+    pointer-events: none;
+  }
 
   .poster-row { display: flex; align-items: center; gap: 12px; margin-top: 2px; }
 
@@ -524,7 +662,95 @@
   .file-label:hover { color: var(--text); border-color: var(--text-muted); }
   .file-input { display: none; }
 
-  .form-actions { display: flex; gap: 10px; }
+  .draft-badge {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .field-header > span { font-size: 11px; color: var(--text-muted); }
+
+  .upload-hint { font-size: 10px; color: var(--text-muted); margin-left: 6px; }
+
+  .view-toggle { display: flex; gap: 2px; }
+
+  .toggle-btn {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+
+  .toggle-btn:hover { color: var(--text); }
+  .toggle-btn.active { border-color: var(--border); color: var(--text); }
+
+  .preview-pane {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    min-height: 320px;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .preview-p {
+    font-family: 'Lato', Verdana, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    margin: 0 0 16px 0;
+  }
+
+  .preview-code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 0 0 16px 0;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre;
+  }
+
+  .cover-preview { width: 120px; height: 70px; object-fit: cover; }
+
+  .published-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .published-toggle input { cursor: pointer; }
+
+  .pub-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .pub-label.is-draft { color: #e5c04a; }
+
+  .form-actions { display: flex; gap: 10px; align-items: center; }
 
   .btn-save {
     font-family: 'JetBrains Mono', ui-monospace, monospace;

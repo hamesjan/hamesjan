@@ -228,7 +228,7 @@
   .counter-cover {
     position: absolute;
     inset: -4px;
-    background: color-mix(in srgb, var(--bg) 95%, white);
+    background: color-mix(in srgb, var(--bg) 94%, white);
     cursor: default;
     user-select: none;
     transition: opacity 0.2s;
