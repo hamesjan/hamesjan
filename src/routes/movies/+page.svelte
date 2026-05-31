@@ -47,6 +47,9 @@
                   <span class="rating-num">{movie.rating}</span>
                 </span>
               </div>
+              {#if movie.dateWatched}
+                <div class="movie-date">watched {formatDate(movie.dateWatched)}</div>
+              {/if}
               {#if movie.director}
                 <div class="movie-director">dir. {movie.director}</div>
               {/if}
@@ -55,9 +58,6 @@
               {/if}
               {#if movie.review}
                 <div class="movie-review">{movie.review}</div>
-              {/if}
-              {#if movie.dateWatched}
-                <div class="movie-date">watched {formatDate(movie.dateWatched)}</div>
               {/if}
             </div>
           </div>
@@ -204,5 +204,6 @@
     font-size: 11px;
     color: var(--text-muted);
     opacity: 0.7;
+    margin-bottom: 8px;
   }
 </style>

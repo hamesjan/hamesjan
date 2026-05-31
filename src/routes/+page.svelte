@@ -46,7 +46,7 @@
           <a href="/blog/{post.slug}" class="preview-title">{post.title}</a>
           <span class="preview-date">{post.date}</span>
         </div>
-        <div class="preview-body">{post.content}</div>
+        <div class="preview-body">{post.content.replace(/!\[.*?\]\(.*?\)/g, '').trim()}</div>
         <a href="/blog/{post.slug}" class="read-more">[ ... ]</a>
       </article>
     {/each}
