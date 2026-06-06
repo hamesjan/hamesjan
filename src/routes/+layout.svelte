@@ -47,6 +47,7 @@
     <a href="/movies" class="nav-link">movies</a>
     <a href="/blog" class="nav-link">blog</a>
     <a href="/tags" class="nav-link">tags</a>
+    <a href="/downloads" class="nav-link">downloads</a>
     <a href="/portfolio" class="nav-link">portfolio</a>
     <div class="settings-menu">
       <button class="settings-btn" on:click|stopPropagation={() => (settingsOpen = !settingsOpen)}>
