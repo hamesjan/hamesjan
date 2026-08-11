@@ -1,5 +1,6 @@
 <script>
   import { onMount, tick } from 'svelte';
+  import { renderLink } from '$lib/markdown.js';
 
   let status = 'loading'; // 'loading' | 'login' | 'authed'
   let activeTab = 'blog';
@@ -185,7 +186,7 @@
     const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return escaped
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;display:block;margin:8px 0">')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => renderLink(label, url));
   }
 
   async function deletePost(slug) {

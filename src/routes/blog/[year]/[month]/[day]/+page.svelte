@@ -1,4 +1,6 @@
 <script>
+  import { renderLink } from '$lib/markdown.js';
+
   export let data;
   const { post } = data;
 
@@ -29,7 +31,7 @@
       .replace(/>/g, '&gt;');
     return escaped
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="post-img">')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => renderLink(label, url));
   }
 </script>
 
