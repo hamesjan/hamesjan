@@ -1,6 +1,8 @@
 <script>
   import { onMount } from 'svelte';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import '../app.css';
+  import { track } from '$lib/analytics';
 
   let darkMode = true;
   let settingsOpen = false;
@@ -9,9 +11,31 @@
   let clickTimer = null;
   let counterRevealed = false;
 
+  let pageEntryTime = 0;
+
+  afterNavigate(() => {
+    pageEntryTime = Date.now();
+    track('pageview');
+  });
+
+  beforeNavigate(() => {
+    if (pageEntryTime) {
+      track('page_leave', { duration_ms: Date.now() - pageEntryTime });
+      pageEntryTime = 0;
+    }
+  });
+
   onMount(() => {
     const saved = localStorage.getItem('darkMode');
     darkMode = saved !== null ? saved === 'true' : true;
+
+    function onVisibility() {
+      if (document.visibilityState === 'hidden' && pageEntryTime) {
+        track('page_leave', { duration_ms: Date.now() - pageEntryTime });
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   });
 
   function toggleDark() {

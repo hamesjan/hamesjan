@@ -1,3 +1,7 @@
 hamesjan.com, www.hamesjan.com {
+    handle /collect {
+        reverse_proxy localhost:4000
+    }
+
     reverse_proxy localhost:3000
 }
