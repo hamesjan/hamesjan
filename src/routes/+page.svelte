@@ -3,6 +3,8 @@
 </svelte:head>
 
 <script>
+  import { stripMarkdown } from '$lib/markdown.js';
+
   export let data;
 
   let expanded = false;
@@ -46,7 +48,7 @@
           <a href="/blog/{post.slug}" class="preview-title">{post.title}</a>
           <span class="preview-date">{post.date}</span>
         </div>
-        <div class="preview-body">{post.content.replace(/!\[.*?\]\(.*?\)/g, '').trim()}</div>
+        <div class="preview-body">{stripMarkdown(post.content)}</div>
         <a href="/blog/{post.slug}" class="read-more">[ ... ]</a>
       </article>
     {/each}

@@ -19,6 +19,14 @@ export function isExternal(href) {
   return /^(https?:)?\/\//i.test(href);
 }
 
+// plain-text version for previews: drop images, keep link labels only
+export function stripMarkdown(text) {
+  return text
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    .trim();
+}
+
 export function renderLink(text, url) {
   const href = normalizeUrl(url).replace(/"/g, '&quot;');
   const attrs = isExternal(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
