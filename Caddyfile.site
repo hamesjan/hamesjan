@@ -1,4 +1,11 @@
-hamesjan.com, www.hamesjan.com {
+# www redirects to the apex so there is one canonical origin. SvelteKit's CSRF
+# guard compares the browser's Origin header against ORIGIN (pinned to the apex
+# in /root/hamesjan/.env), so multipart POSTs from www were rejected with 403.
+www.hamesjan.com {
+    redir https://hamesjan.com{uri} permanent
+}
+
+hamesjan.com {
     handle /collect {
         reverse_proxy localhost:4000
     }
