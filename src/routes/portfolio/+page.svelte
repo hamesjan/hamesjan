@@ -3,10 +3,17 @@
   // original demo gifs)
   const projects = [
     {
+      media: { type: 'img', src: '/imgs/triproutemap.webp', w: 800, h: 630 },
+      title: 'triproutemap.com',
+      href: 'https://triproutemap.com',
+      tech: 'SvelteKit',
+      body: 'This tool helps you plan the most efficient route for a trip and gives you a rough estimate of the cost. Use it for your solo traveling dreams.'
+    },
+    {
       media: { type: 'img', src: '/imgs/dothink.webp', w: 800, h: 408 },
       title: 'dothink.ai',
       href: 'https://dothink.ai',
-      tech: 'hehe',
+      tech: 'React.js + JS + EC2',
       date: 'Sept 2025',
       body: 'I made an app to turn your thoughts into an interactive mindmap. Explore questions, answers, and insights like never before.'
     },
@@ -143,6 +150,7 @@
 
     {#each projects as p (p.title)}
       <article class="project">
+        {#if p.media}
         <div class="media" style="max-width: {p.media.w}px">
           {#if p.media.type === 'video'}
             <video
@@ -167,6 +175,7 @@
             />
           {/if}
         </div>
+        {/if}
 
         <div class="text">
           <div class="meta">
@@ -175,7 +184,7 @@
             {:else}
               <span class="title">{p.title}</span>
             {/if}
-            <span class="date">{p.date}</span>
+            {#if p.date}<span class="date">{p.date}</span>{/if}
           </div>
           <p class="tech">{p.tech}</p>
           <p class="body">{p.body}</p>
@@ -278,7 +287,10 @@
     border-radius: 2px;
   }
 
-  .text { min-width: 0; }
+  .text {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 
   .meta {
     display: flex;
