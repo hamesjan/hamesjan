@@ -6,9 +6,19 @@ www.hamesjan.com {
 }
 
 hamesjan.com {
+    # HTML/CSS/JS/SVG compress well; Caddy skips already-compressed types
+    # (webp, mp4, woff2) on its own.
+    encode zstd gzip
+
     handle /collect {
         reverse_proxy localhost:4000
     }
+
+    # adapter-node serves static/ with max-age=0, so media was refetched on
+    # every visit. 30 days rather than a year: these filenames aren't
+    # content-hashed, so a replaced image still rolls out in a month.
+    @media path /imgs/* /favicon.ico
+    header @media Cache-Control "public, max-age=2592000"
 
     reverse_proxy localhost:3000
 }
