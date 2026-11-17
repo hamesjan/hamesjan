@@ -126,7 +126,6 @@
         <a href="/JamesHanResume.pdf">Resume</a> /
         <a href="/bio.txt">Bio</a> /
         <a href="https://github.com/hamesjan/">Github</a> /
-        <a href="https://www.instagram.com/hamesjan/">Insta</a> /
         <a href="/portfolio/fish">Fish</a>
       </p>
     </div>
