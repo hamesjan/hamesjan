@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import '../app.css';
-  import { track } from '$lib/analytics';
+  import { track, trackPageview, trackLeave, initAnalytics } from '$lib/analytics';
 
   let darkMode = true;
   let settingsOpen = false;
@@ -11,37 +11,20 @@
   let clickTimer = null;
   let counterRevealed = false;
 
-  let pageEntryTime = 0;
-
-  afterNavigate(() => {
-    pageEntryTime = Date.now();
-    track('pageview');
-  });
-
-  beforeNavigate(() => {
-    if (pageEntryTime) {
-      track('page_leave', { duration_ms: Date.now() - pageEntryTime });
-      pageEntryTime = 0;
-    }
-  });
+  afterNavigate(() => trackPageview());
+  beforeNavigate(() => trackLeave());
 
   onMount(() => {
     const saved = localStorage.getItem('darkMode');
     darkMode = saved !== null ? saved === 'true' : true;
-
-    function onVisibility() {
-      if (document.visibilityState === 'hidden' && pageEntryTime) {
-        track('page_leave', { duration_ms: Date.now() - pageEntryTime });
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    initAnalytics();
   });
 
   function toggleDark() {
     darkMode = !darkMode;
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('darkMode', String(darkMode));
+    track('theme_toggle', { dark: darkMode });
   }
 
   function handleWindowClick(e) {
@@ -53,6 +36,7 @@
     clearTimeout(clickTimer);
     if (clickCount >= 3) {
       clickCount = 0;
+      if (!counterRevealed) track('easter_egg', { type: 'counter_reveal' });
       counterRevealed = true;
     } else {
       clickTimer = setTimeout(() => { clickCount = 0; }, 600);
@@ -74,7 +58,7 @@
     <a href="/downloads" class="nav-link">downloads</a>
     <a href="/portfolio" class="nav-link">portfolio</a>
     <div class="settings-menu">
-      <button class="settings-btn" on:click|stopPropagation={() => (settingsOpen = !settingsOpen)}>
+      <button class="settings-btn" on:click|stopPropagation={() => { settingsOpen = !settingsOpen; if (settingsOpen) track('settings_open'); }}>
         settings {settingsOpen ? '▴' : '▾'}
       </button>
       {#if settingsOpen}
