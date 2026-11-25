@@ -102,25 +102,8 @@
 
 <main>
   <section class="bio">
-    <img
-      class="portrait"
-      src="/imgs/mugshot.webp"
-      alt="James Han"
-      width="900"
-      height="1117"
-      fetchpriority="high"
-      decoding="async"
-    />
     <div class="bio-text">
       <h1>James Han</h1>
-      <p class="body">
-        I grew up in the sunny streets of Torrance, California. I love the ocean, my dog,
-        and eating yummy foods. For work, I have interned at
-        <a href="https://www.mobis.com/en/index.do">Hyundai Mobis</a> in Seoul, South Korea
-        and I help with the <a href="https://www.raytechx.com/">family business</a> from time
-        to time. I just finished up an internship working on firmware platforms for
-        <a href="https://www.tesla.com">Tesla</a>. I'm going back in Jan 2027!
-      </p>
       <p class="links">
         <a href="mailto:james1023417@gmail.com">Email</a> /
         <a href="/JamesHanResume.pdf">Resume</a> /
@@ -212,14 +195,6 @@
     display: flex;
     gap: 20px;
     align-items: flex-start;
-  }
-
-  .portrait {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 2px;
-    flex-shrink: 0;
   }
 
   h1 {
